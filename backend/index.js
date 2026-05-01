@@ -30,6 +30,18 @@ app.get('/api/cards', (req, res) => {
   });
 });
 
+// Crear nueva tarjeta
+app.post('/api/cards', (req, res) => {
+  const { name, type, credit_limit, cut_day, payment_day, current_debt } = req.body;
+  const stmt = db.prepare('INSERT INTO credit_lines (name, type, credit_limit, cut_day, payment_day, current_debt) VALUES (?, ?, ?, ?, ?, ?)');
+  
+  stmt.run([name, type, credit_limit || 0, cut_day || null, payment_day || null, current_debt || 0], function(err) {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ success: true, id: this.lastID });
+  });
+  stmt.finalize();
+});
+
 // Registrar nueva transacción
 app.post('/api/transactions', (req, res) => {
   const { amount, sender_id, receiver_id, concept, credit_line_id, is_salary } = req.body;

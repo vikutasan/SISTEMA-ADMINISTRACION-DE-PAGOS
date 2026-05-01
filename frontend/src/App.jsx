@@ -7,12 +7,16 @@ function App() {
   const [cards, setCards] = useState([]);
   const [suggestion, setSuggestion] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isCardModalOpen, setIsCardModalOpen] = useState(false);
   const [formData, setFormData] = useState({
     amount: '',
     sender_id: '1', // Alfonso por defecto
     receiver_id: '2', // Víctor por defecto
     concept: '',
     is_salary: false
+  });
+  const [cardData, setCardData] = useState({
+    name: '', type: 'TDC', credit_limit: '', cut_day: '', payment_day: '', current_debt: ''
   });
 
   const fetchData = async () => {
@@ -50,6 +54,22 @@ function App() {
       fetchData(); // Recargar datos
     } catch (e) {
       console.error("Error submitting transaction", e);
+    }
+  };
+
+  const handleCardSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      await fetch('http://localhost:3001/api/cards', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(cardData)
+      });
+      setIsCardModalOpen(false);
+      setCardData({ name: '', type: 'TDC', credit_limit: '', cut_day: '', payment_day: '', current_debt: '' });
+      fetchData();
+    } catch (e) {
+      console.error("Error creating card", e);
     }
   };
 
@@ -119,9 +139,14 @@ function App() {
         )}
       </div>
 
-      <h2 style={{ marginTop: '1rem' }}>Línea de Crédito y Tarjetas</h2>
+      <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <h2>Línea de Crédito y Tarjetas</h2>
+        <button className="btn" style={{ background: 'var(--accent-purple)' }} onClick={() => setIsCardModalOpen(true)}>
+          <Plus size={16} /> Añadir Ficha
+        </button>
+      </div>
       
-      <div className="cards-grid animate-fade-in" style={{ animationDelay: '0.2s' }}>
+      <div className="cards-grid animate-fade-in" style={{ animationDelay: '0.2s', marginTop: '1rem' }}>
         {cards.map(card => {
           // Logica muy basica para "peligro"
           let isDanger = false;
@@ -203,6 +228,53 @@ function App() {
               </div>
               <button type="submit" className="btn" style={{width: '100%', justifyContent: 'center', marginTop: '1rem'}}>
                 Guardar Operación
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+      {isCardModalOpen && (
+        <div className="modal-overlay">
+          <div className="modal-content animate-fade-in">
+            <div className="modal-header">
+              <h3>Añadir Nueva Ficha</h3>
+              <button className="close-btn" onClick={() => setIsCardModalOpen(false)}>×</button>
+            </div>
+            <form onSubmit={handleCardSubmit}>
+              <div className="form-group">
+                <label>Nombre (ej. Muebles Coppel)</label>
+                <input required type="text" className="form-control" value={cardData.name} onChange={e => setCardData({...cardData, name: e.target.value})} />
+              </div>
+              <div className="form-group">
+                <label>Tipo</label>
+                <select className="form-control" value={cardData.type} onChange={e => setCardData({...cardData, type: e.target.value})}>
+                  <option value="TDC">Tarjeta de Crédito</option>
+                  <option value="PRESTAMO">Préstamo</option>
+                  <option value="SERVICIO">Servicio (ej. Internet)</option>
+                </select>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div className="form-group">
+                  <label>Límite ($)</label>
+                  <input type="number" className="form-control" value={cardData.credit_limit} onChange={e => setCardData({...cardData, credit_limit: e.target.value})} />
+                </div>
+                <div className="form-group">
+                  <label>Deuda Inicial ($)</label>
+                  <input type="number" className="form-control" value={cardData.current_debt} onChange={e => setCardData({...cardData, current_debt: e.target.value})} />
+                </div>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div className="form-group">
+                  <label>Día de Corte (1-31)</label>
+                  <input type="number" min="1" max="31" className="form-control" value={cardData.cut_day} onChange={e => setCardData({...cardData, cut_day: e.target.value})} />
+                </div>
+                <div className="form-group">
+                  <label>Día Límite de Pago (1-31)</label>
+                  <input required type="number" min="1" max="31" className="form-control" value={cardData.payment_day} onChange={e => setCardData({...cardData, payment_day: e.target.value})} />
+                </div>
+              </div>
+              <button type="submit" className="btn" style={{width: '100%', justifyContent: 'center', marginTop: '1rem', background: 'var(--accent-purple)'}}>
+                Crear Ficha
               </button>
             </form>
           </div>
