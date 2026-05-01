@@ -24,7 +24,7 @@ db.serialize(() => {
   stmtCards.run('BBVA', 'TDC', 19400, 23, 13, 19399.14); // Ojo, saldo inicial era 0 pero la deuda total en PDF dice 19399.14? Wait, PDF says "PAGO PARA NO GENERAR INTERESES = $0.00" but "DEUDA TOTAL = $19399.14". 
   stmtCards.run('BANCOPPEL', 'TDC', 9350.37, 20, 16, 9350.37);
   stmtCards.run('STORY', 'TDC', 1000, 27, 18, 1000);
-  stmtCards.run('ROPA COPPEL', 'TDC', 8412, null, 20, 8412); // Total debt 8412, pago no generar int 765
+  stmtCards.run('ROPA COPPEL', 'TDC', 8412, null, 20, 0); // Total debt 8412, pago no generar int 765
   stmtCards.run('PLATA', 'TDC', 11500, null, 22, 11457.81);
   stmtCards.run('INVEX', 'TDC', 5500, 5, 27, 1026.32);
   stmtCards.run('TOTAL PLAY', 'SERVICIO', 0, null, 28, 0);
