@@ -32,13 +32,56 @@ app.get('/api/cards', (req, res) => {
 
 // Crear nueva tarjeta
 app.post('/api/cards', (req, res) => {
-  const { name, type, credit_limit, cut_day, payment_day, current_debt } = req.body;
-  const stmt = db.prepare('INSERT INTO credit_lines (name, type, credit_limit, cut_day, payment_day, current_debt) VALUES (?, ?, ?, ?, ?, ?)');
+  const { 
+    name, type, periodicity, credit_limit, cut_day, payment_day, 
+    current_debt, payment_no_interest, available_credit, liquidation_amount 
+  } = req.body;
+  const stmt = db.prepare(`
+    INSERT INTO credit_lines 
+    (name, type, periodicity, credit_limit, cut_day, payment_day, current_debt, payment_no_interest, available_credit, liquidation_amount) 
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
   
-  stmt.run([name, type, credit_limit || 0, cut_day || null, payment_day || null, current_debt || 0], function(err) {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json({ success: true, id: this.lastID });
-  });
+  stmt.run(
+    [
+      name, type, periodicity || 'MENSUAL', credit_limit || 0, cut_day || null, payment_day || null, 
+      current_debt || 0, payment_no_interest || 0, available_credit || 0, liquidation_amount || 0
+    ], 
+    function(err) {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ success: true, id: this.lastID });
+    }
+  );
+  stmt.finalize();
+});
+
+// Actualizar tarjeta existente
+app.put('/api/cards/:id', (req, res) => {
+  const { id } = req.params;
+  const { 
+    name, type, periodicity, credit_limit, cut_day, payment_day, 
+    current_debt, payment_no_interest, available_credit, liquidation_amount 
+  } = req.body;
+
+  const stmt = db.prepare(`
+    UPDATE credit_lines SET 
+      name = ?, type = ?, periodicity = ?, credit_limit = ?, cut_day = ?, 
+      payment_day = ?, current_debt = ?, payment_no_interest = ?, 
+      available_credit = ?, liquidation_amount = ?
+    WHERE id = ?
+  `);
+
+  stmt.run(
+    [
+      name, type, periodicity || 'MENSUAL', credit_limit || 0, cut_day || null, payment_day || null, 
+      current_debt || 0, payment_no_interest || 0, available_credit || 0, liquidation_amount || 0,
+      id
+    ],
+    function(err) {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ success: true });
+    }
+  );
   stmt.finalize();
 });
 

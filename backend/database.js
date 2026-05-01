@@ -19,11 +19,15 @@ db.serialize(() => {
     CREATE TABLE IF NOT EXISTS credit_lines (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
-      type TEXT NOT NULL, -- 'TDC', 'PRESTAMO', 'SERVICIO'
+      type TEXT NOT NULL, -- 'TDC', 'PRESTAMO', 'SERVICIO', 'CREDITO DEPARTAMENTAL', 'PRESTAMO DEPARTAMENTAL'
+      periodicity TEXT DEFAULT 'MENSUAL', -- 'SEMANAL', 'MENSUAL'
       credit_limit REAL DEFAULT 0,
       cut_day INTEGER, -- Día del mes que corta (1-31)
       payment_day INTEGER, -- Día del mes límite de pago (1-31)
-      current_debt REAL DEFAULT 0
+      current_debt REAL DEFAULT 0,
+      payment_no_interest REAL DEFAULT 0,
+      available_credit REAL DEFAULT 0,
+      liquidation_amount REAL DEFAULT 0
     )
   `);
 
