@@ -8,8 +8,8 @@ db.serialize(() => {
 
   // Insertar Cuentas
   const stmtAccounts = db.prepare('INSERT INTO accounts (id, name, balance) VALUES (?, ?, ?)');
-  stmtAccounts.run(1, 'Alfonso', 0); // Asumimos 0 inicial, se recalculará
-  stmtAccounts.run(2, 'Víctor', 0);
+  stmtAccounts.run(1, 'Alfonso', -4938.74); 
+  stmtAccounts.run(2, 'Víctor', 4938.74);
   stmtAccounts.finalize();
 
   // Insertar Líneas de Crédito (Basado en el 22 de Abril de 2026)
