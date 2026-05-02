@@ -7,11 +7,29 @@ db.serialize(() => {
   db.run('DELETE FROM accounts');
   db.run('DELETE FROM salaries');
 
-  // Insertar Cuentas
+  // Insertar Cuentas (Empezamos en 0 para que las transacciones calculen el balance real)
   const stmtAccounts = db.prepare('INSERT INTO accounts (id, name, balance) VALUES (?, ?, ?)');
-  stmtAccounts.run(1, 'Alfonso', -4078.74); 
-  stmtAccounts.run(2, 'Víctor', 4078.74);
+  stmtAccounts.run(1, 'Alfonso', 0); 
+  stmtAccounts.run(2, 'Víctor', 0);
   stmtAccounts.finalize();
+
+  // Insertar Transacciones Históricas (Alfonso -> Víctor)
+  const stmtTrans = db.prepare('INSERT INTO transactions (date, amount, sender_id, receiver_id, concept) VALUES (?, ?, ?, ?, ?)');
+  
+  // Aportaciones Alfonso
+  stmtTrans.run('2026-03-16 12:00:00', 9900.00, 1, 2, 'Pago TDC Bancoppel');
+  stmtTrans.run('2026-03-17 12:00:00', 19700.00, 1, 2, 'Efectivo para TDC BBVA');
+  stmtTrans.run('2026-03-28 12:00:00', 5000.00, 1, 2, 'Préstamo Suburbia y otras');
+  stmtTrans.run('2026-04-13 12:00:00', 9000.00, 1, 2, 'Efectivo BBVA y Bancoppel');
+  stmtTrans.run('2026-04-25 12:00:00', 50860.00, 1, 2, 'Liquidación deuda Coppel');
+  stmtTrans.run('2026-04-26 12:00:00', 1500.00, 1, 2, 'Efectivo para Erika');
+
+  // Aportaciones Víctor
+  stmtTrans.run('2026-04-14 12:00:00', 6250.00, 2, 1, 'Pago en efectivo');
+  stmtTrans.run('2026-04-18 12:00:00', 631.26, 2, 1, 'Pedidos equipo Amazon');
+  stmtTrans.run('2026-04-25 15:00:00', 50000.00, 2, 1, 'Nuevo Préstamo Coppel (Efec.)');
+
+  stmtTrans.finalize();
 
   // Insertar Líneas de Crédito (Basado en el 22 de Abril de 2026)
   const stmtCards = db.prepare('INSERT INTO credit_lines (name, type, credit_limit, cut_day, payment_day, current_debt) VALUES (?, ?, ?, ?, ?, ?)');

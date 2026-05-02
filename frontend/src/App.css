@@ -1,13 +1,15 @@
 :root {
   --bg-dark: #0f172a;
   --bg-card: #1e293b;
-  --text-primary: #f8fafc;
+  --bg-sidebar: #020617;
+  --text-main: #f8fafc;
   --text-secondary: #94a3b8;
-  --accent-blue: #3b82f6;
-  --accent-purple: #8b5cf6;
-  --accent-green: #10b981;
+  --accent-blue: #38bdf8;
+  --accent-purple: #a855f7;
+  --accent-green: #22c55e;
   --accent-red: #ef4444;
-  --border-color: rgba(255, 255, 255, 0.1);
+  --border-color: #334155;
+  --sidebar-width: 260px;
 }
 
 * {
@@ -17,242 +19,222 @@
 }
 
 body {
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family: 'Inter', -apple-system, sans-serif;
   background-color: var(--bg-dark);
-  color: var(--text-primary);
-  min-height: 100vh;
-  -webkit-font-smoothing: antialiased;
+  color: var(--text-main);
+  line-height: 1.5;
 }
 
-/* App Container */
+.app-layout {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* SIDEBAR */
+.sidebar {
+  width: var(--sidebar-width);
+  background-color: var(--bg-sidebar);
+  border-right: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  height: 100vh;
+  z-index: 100;
+}
+
+.sidebar-header {
+  padding: 2rem 1.5rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.sidebar-header h2 {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--accent-blue);
+  letter-spacing: -0.025em;
+}
+
+.sidebar-nav {
+  padding: 1rem;
+  flex: 1;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.875rem 1rem;
+  border-radius: 0.5rem;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-weight: 500;
+  transition: all 0.2s;
+  cursor: pointer;
+  margin-bottom: 0.25rem;
+  background: transparent;
+  border: none;
+  width: 100%;
+  text-align: left;
+}
+
+.nav-item:hover {
+  background-color: var(--bg-card);
+  color: white;
+}
+
+.nav-item.active {
+  background-color: var(--accent-blue);
+  color: var(--bg-dark);
+}
+
+/* MAIN CONTENT */
+.main-content {
+  flex: 1;
+  margin-left: var(--sidebar-width);
+  padding: 2rem;
+}
+
 .app-container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 2rem;
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
 }
 
-/* Header */
 header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 2rem;
 }
 
-header h1 {
-  font-size: 2rem;
-  font-weight: 700;
-  background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+h1 {
+  font-size: 1.875rem;
+  font-weight: 800;
+  letter-spacing: -0.025em;
 }
 
-/* Glassmorphism Cards */
 .card {
-  background: var(--bg-card);
-  border-radius: 16px;
-  padding: 1.5rem;
-  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+  background-color: var(--bg-card);
   border: 1px solid var(--border-color);
-  backdrop-filter: blur(10px);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
 }
 
-.card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.7);
-}
-
-/* Dashboard Grid */
 .dashboard-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 1.5rem;
-}
-
-.stat-value {
-  font-size: 2.5rem;
-  font-weight: 800;
-  margin: 0.5rem 0;
+  margin-bottom: 2.5rem;
 }
 
 .stat-label {
-  color: var(--text-secondary);
   font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  font-weight: 600;
+  margin-bottom: 0.5rem;
 }
 
-.text-green { color: var(--accent-green); }
-.text-red { color: var(--accent-red); }
-
-/* Suggestion Panel */
-.suggestion-panel {
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(139, 92, 246, 0.1));
-  border-left: 4px solid var(--accent-purple);
+.stat-value {
+  font-size: 2.25rem;
+  font-weight: 800;
 }
 
-/* Timeline / Cards Grid */
 .cards-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 1.5rem;
 }
 
-.credit-card {
-  position: relative;
-  overflow: hidden;
+/* TABLES */
+.table-container {
+  overflow-x: auto;
+  border-radius: 0.75rem;
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
 }
 
-.credit-card::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0; height: 4px;
-  background: linear-gradient(90deg, var(--accent-blue), var(--accent-purple));
+table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
 }
 
-.credit-card.danger::before {
-  background: var(--accent-red);
+th {
+  background-color: #1e293b80;
+  padding: 1rem;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border-color);
 }
 
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 1rem;
+td {
+  padding: 1rem;
+  border-bottom: 1px solid var(--border-color);
 }
 
-.card-title {
-  font-size: 1.25rem;
+.status-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
   font-weight: 700;
 }
 
-.card-type {
-  font-size: 0.75rem;
-  padding: 0.25rem 0.5rem;
-  background: rgba(255,255,255,0.1);
-  border-radius: 999px;
-  color: var(--text-secondary);
-}
+.status-paid { background-color: #14532d; color: #4ade80; }
+.status-pending { background-color: #450a0a; color: #f87171; }
 
-.card-details {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.detail-row {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.875rem;
-}
-
-.detail-row span:last-child {
-  font-weight: 600;
-}
-
-.danger-text {
-  color: var(--accent-red);
-  font-weight: bold;
-}
-
-/* Buttons */
-.btn {
-  background: var(--accent-blue);
+.status-select {
+  background: var(--bg-dark);
   color: white;
-  border: none;
-  padding: 0.75rem 1.5rem;
-  border-radius: 8px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.btn:hover {
-  background: #2563eb;
-  transform: scale(1.02);
-}
-
-.btn-icon {
-  padding: 0.5rem;
-  border-radius: 50%;
-}
-
-/* Modal */
-.modal-overlay {
-  position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(5px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.modal-content {
-  background: var(--bg-card);
-  padding: 2rem;
-  border-radius: 16px;
-  width: 90%;
-  max-width: 500px;
   border: 1px solid var(--border-color);
-}
-
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 1.5rem;
-}
-
-.close-btn {
-  background: transparent;
-  color: var(--text-secondary);
-  border: none;
-  font-size: 1.5rem;
-  cursor: pointer;
-}
-
-.form-group {
-  margin-bottom: 1rem;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 0.5rem;
-  color: var(--text-secondary);
-  font-size: 0.875rem;
-}
-
-.form-control {
-  width: 100%;
-  padding: 0.75rem;
-  border-radius: 8px;
-  border: 1px solid var(--border-color);
-  background: rgba(0, 0, 0, 0.2);
-  color: white;
-  font-family: inherit;
-}
-
-.form-control:focus {
+  padding: 0.4rem;
+  border-radius: 0.4rem;
+  font-size: 0.8rem;
   outline: none;
+  cursor: pointer;
+}
+
+.status-select:focus {
   border-color: var(--accent-blue);
 }
 
-/* Animations */
+/* BUTTONS */
+.btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  background-color: var(--accent-blue);
+  color: var(--bg-dark);
+  border: none;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.btn:hover {
+  opacity: 0.9;
+}
+
+/* UTILS */
+.text-red { color: var(--accent-red); }
+.text-green { color: var(--accent-green); }
+.text-secondary { color: var(--text-secondary); }
+
+.animate-fade-in {
+  animation: fadeIn 0.4s ease-out;
+}
+
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
-.animate-fade-in {
-  animation: fadeIn 0.4s ease-out forwards;
+@media (max-width: 768px) {
+  .sidebar { width: 80px; }
+  .sidebar-header h2, .nav-item span { display: none; }
+  .main-content { margin-left: 80px; }
 }

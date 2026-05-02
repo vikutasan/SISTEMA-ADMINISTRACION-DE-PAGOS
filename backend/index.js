@@ -6,18 +6,36 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Obtener Dashboard (Balance Global y Deudas)
+// Obtener Dashboard - Estado Global
 app.get('/api/dashboard', (req, res) => {
-  db.all('SELECT * FROM accounts', [], (err, accounts) => {
+  const data = {
+    accounts: [],
+    totalDebt: 0
+  };
+
+  // Calcular balance neto desde transacciones
+  db.all('SELECT * FROM transactions', [], (err, trans) => {
     if (err) return res.status(500).json({ error: err.message });
-    
-    db.get('SELECT SUM(current_debt) as total_debt FROM credit_lines', [], (err, row) => {
+
+    let alfonsoBalance = 0;
+    let victorBalance = 0;
+
+    trans.forEach(t => {
+      if (t.sender_id === 1) alfonsoBalance -= t.amount;
+      if (t.receiver_id === 1) alfonsoBalance += t.amount;
+      if (t.sender_id === 2) victorBalance -= t.amount;
+      if (t.receiver_id === 2) victorBalance += t.amount;
+    });
+
+    data.accounts = [
+      { id: 1, name: 'Alfonso', balance: alfonsoBalance },
+      { id: 2, name: 'Víctor', balance: victorBalance }
+    ];
+
+    db.all('SELECT current_debt FROM credit_lines', [], (err, lines) => {
       if (err) return res.status(500).json({ error: err.message });
-      
-      res.json({
-        accounts,
-        totalDebt: row.total_debt
-      });
+      data.totalDebt = lines.reduce((acc, curr) => acc + (curr.current_debt || 0), 0);
+      res.json(data);
     });
   });
 });
@@ -83,6 +101,14 @@ app.put('/api/cards/:id', (req, res) => {
     }
   );
   stmt.finalize();
+});
+
+// Obtener todas las transacciones
+app.get('/api/transactions', (req, res) => {
+  db.all('SELECT * FROM transactions ORDER BY date DESC', [], (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(rows);
+  });
 });
 
 // Registrar nueva transacción
