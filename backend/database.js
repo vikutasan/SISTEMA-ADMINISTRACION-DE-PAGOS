@@ -47,6 +47,17 @@ db.serialize(() => {
       FOREIGN KEY(credit_line_id) REFERENCES credit_lines(id)
     )
   `);
+
+  // Tabla de Semanalidades de Víctor
+  db.run(`
+    CREATE TABLE IF NOT EXISTS salaries (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      week_number INTEGER NOT NULL,
+      date TEXT NOT NULL, -- Fecha del jueves correspondiente
+      amount REAL DEFAULT 5000,
+      status TEXT DEFAULT 'PENDIENTE' -- 'PENDIENTE', 'PAGADO'
+    )
+  `);
 });
 
 module.exports = db;

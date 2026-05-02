@@ -5,6 +5,7 @@ db.serialize(() => {
   db.run('DELETE FROM transactions');
   db.run('DELETE FROM credit_lines');
   db.run('DELETE FROM accounts');
+  db.run('DELETE FROM salaries');
 
   // Insertar Cuentas
   const stmtAccounts = db.prepare('INSERT INTO accounts (id, name, balance) VALUES (?, ?, ?)');
@@ -32,7 +33,19 @@ db.serialize(() => {
 
   stmtCards.finalize();
 
-  console.log('Base de datos poblada con éxito con los saldos al 22 de Abril de 2026.');
+  // Insertar Semanalidades de Víctor
+  const stmtSalaries = db.prepare('INSERT INTO salaries (week_number, date, status) VALUES (?, ?, ?)');
+  stmtSalaries.run(11, '2026-03-11', 'PAGADO');
+  stmtSalaries.run(12, '2026-03-19', 'PENDIENTE');
+  stmtSalaries.run(13, '2026-03-26', 'PENDIENTE');
+  stmtSalaries.run(14, '2026-04-02', 'PENDIENTE');
+  stmtSalaries.run(15, '2026-04-09', 'PENDIENTE');
+  stmtSalaries.run(16, '2026-04-16', 'PENDIENTE');
+  stmtSalaries.run(17, '2026-04-23', 'PENDIENTE');
+  stmtSalaries.run(18, '2026-04-30', 'PENDIENTE');
+  stmtSalaries.finalize();
+
+  console.log('Base de datos poblada con éxito con los saldos al 2 de Mayo de 2026.');
 });
 
 db.close();

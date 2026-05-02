@@ -142,6 +142,64 @@ app.get('/api/suggestions', (req, res) => {
   });
 });
 
+// --- NUEVOS ENDPOINTS PARA SEMANALIDADES ---
+
+// Obtener semanalidades con generación automática
+app.get('/api/salaries', (req, res) => {
+  db.all('SELECT * FROM salaries ORDER BY week_number DESC', [], (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    
+    const today = new Date();
+    // Encontrar el último jueves (o el de hoy si es jueves)
+    const lastThursday = new Date();
+    lastThursday.setDate(today.getDate() - ((today.getDay() + 3) % 7));
+    lastThursday.setHours(0, 0, 0, 0);
+
+    const lastEntryDate = rows.length > 0 ? new Date(rows[0].date) : new Date('2026-03-04');
+    const lastWeekNum = rows.length > 0 ? rows[0].week_number : 10;
+
+    // Si el último jueves es posterior a la última entrada, generamos
+    if (lastThursday > lastEntryDate) {
+      const diffTime = lastThursday - lastEntryDate;
+      const weeksToGenerate = Math.floor(diffTime / (1000 * 60 * 60 * 24 * 7));
+
+      if (weeksToGenerate > 0) {
+        let currentWeek = lastWeekNum;
+        let currentDate = new Date(lastEntryDate);
+        
+        const generate = (i) => {
+          if (i > weeksToGenerate) {
+             return db.all('SELECT * FROM salaries ORDER BY week_number DESC', [], (err, newRows) => {
+               res.json(newRows);
+             });
+          }
+          currentWeek++;
+          currentDate.setDate(currentDate.getDate() + 7);
+          const dateStr = currentDate.toISOString().split('T')[0];
+          db.run('INSERT INTO salaries (week_number, date, status) VALUES (?, ?, ?)', [currentWeek, dateStr, 'PENDIENTE'], () => {
+            generate(i + 1);
+          });
+        };
+        generate(1);
+      } else {
+        res.json(rows);
+      }
+    } else {
+      res.json(rows);
+    }
+  });
+});
+
+// Actualizar estatus de semanalidad
+app.put('/api/salaries/:id', (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+  db.run('UPDATE salaries SET status = ? WHERE id = ?', [status, id], (err) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ success: true });
+  });
+});
+
 const PORT = 3001;
 app.listen(PORT, () => {
   console.log(`Backend corriendo en http://localhost:${PORT}`);
