@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<style>
+  body { font-family: 'Segoe UI', Arial, sans-serif; padding: 2rem; color: #333; background-color: #f4f7f6; }
+  .container { max-width: 900px; margin: 0 auto; background: white; padding: 3rem; border-radius: 20px; shadow: 0 10px 30px rgba(0,0,0,0.1); }
+  h1 { text-align: center; color: #2c3e50; font-size: 2.5rem; margin-bottom: 0.5rem; }
+  .update-date { text-align: center; color: #7f8c8d; margin-bottom: 3rem; font-style: italic; }
+  h3 { color: #2c3e50; margin-top: 2.5rem; border-left: 5px solid #3498db; padding-left: 1rem; font-size: 1.5rem; }
+  table { width: 100%; border-collapse: collapse; margin-top: 1.5rem; border-radius: 10px; overflow: hidden; }
+  th, td { padding: 15px; text-align: left; border-bottom: 1px solid #edf2f7; }
+  th { background-color: #f8fafc; color: #4a5568; font-weight: 700; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 0.05em; }
+  .total-row { background-color: #f1f5f9; font-weight: 800; }
+  .total-row td { border-top: 2px solid #cbd5e1; }
+  .summary-box { background-color: #ebf8ff; border: 2px solid #bee3f8; padding: 2rem; border-radius: 15px; margin-top: 3rem; text-align: center; }
+  .conclusion-title { font-size: 1.5rem; color: #2b6cb0; font-weight: 800; margin-bottom: 1rem; display: block; }
+  .highlight { color: #c53030; font-size: 1.8rem; font-weight: 900; }
+  .status-paid { color: #38a169; font-weight: 700; background: #f0fff4; padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; }
+  .status-pending { color: #e53e3e; font-weight: 700; background: #fff5f5; padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; }
+  .reference-box { background-color: #fefcbf; border: 1px solid #faf089; padding: 1rem; border-radius: 10px; margin-top: 1rem; font-size: 0.9rem; color: #744210; }
+  .bonus-badge { background: #faf5ff; color: #6b46c1; border: 1px solid #e9d8fd; padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: 700; }
+</style>
+</head>
+<body>
+  <div class="container">
+    <h1>Estado de Cuenta A&V</h1>
+    <p class="update-date">Actualizado al 2 de Mayo de 2026 (Nueva Política de Intereses y Beneficios)</p>
+
+    <h3>1. SEMANALIDADES DE VÍCTOR</h3>
+    <table>
+      <thead>
+        <tr><th>NÚMERO DE SEMANA</th><th>ESTATUS</th><th style="text-align: right;">MONTO PENDIENTE</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Semana 11 (11 de Marzo)</td><td><span class="status-paid">PAGADA ($5,000)</span></td><td style="text-align: right;">$0.00</td></tr>
+        <tr><td>Semana 12 (19 de Marzo)</td><td><span class="status-pending">PENDIENTE</span></td><td style="text-align: right;">$5,000.00</td></tr>
+        <tr><td>Semana 13 (26 de Marzo)</td><td><span class="status-pending">PENDIENTE</span></td><td style="text-align: right;">$5,000.00</td></tr>
+        <tr><td>Semana 14 (02 de Abril)</td><td><span class="status-pending">PENDIENTE</span></td><td style="text-align: right;">$5,000.00</td></tr>
+        <tr><td>Semana 15 (09 de Abril)</td><td><span class="status-pending">PENDIENTE</span></td><td style="text-align: right;">$5,000.00</td></tr>
+        <tr><td>Semana 16 (16 de Abril)</td><td><span class="status-pending">PENDIENTE</span></td><td style="text-align: right;">$5,000.00</td></tr>
+        <tr><td>Semana 17 (23 de Abril)</td><td><span class="status-pending">PENDIENTE</span></td><td style="text-align: right;">$5,000.00</td></tr>
+        <tr><td>Semana 18 (30 de Abril)</td><td><span class="status-pending">PENDIENTE</span></td><td style="text-align: right;">$5,000.00</td></tr>
+        <tr class="total-row"><td colspan="2">TOTAL MONTO PENDIENTE A FAVOR DE VÍCTOR</td><td style="text-align: right;">$35,000.00</td></tr>
+      </tbody>
+    </table>
+
+    <h3>2. APORTACIONES DE CAPITAL (FLUJO NETO)</h3>
+    <p style="font-size: 0.85rem; color: #718096; margin-top: -1rem;">Registro de movimientos excluyendo beneficios adicionales e intereses absorbidos por Alfonso.</p>
+    <table>
+      <thead>
+        <tr><th>FECHA</th><th>CONCEPTO</th><th style="text-align: right;">ALFONSO ▶ VÍCTOR</th><th style="text-align: right;">VÍCTOR ▶ ALFONSO</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>16 de Mar</td><td>Pago TDC Bancoppel</td><td style="text-align: right;">$9,900.00</td><td style="text-align: right;">$0.00</td></tr>
+        <tr><td>17 de Mar</td><td>Efectivo para TDC BBVA</td><td style="text-align: right;">$19,700.00</td><td style="text-align: right;">$0.00</td></tr>
+        <tr><td>28 de Mar</td><td>Préstamo Suburbia y otras</td><td style="text-align: right;">$5,000.00</td><td style="text-align: right;">$0.00</td></tr>
+        <tr><td>13 de Abr</td><td>Efectivo BBVA y Bancoppel</td><td style="text-align: right;">$9,000.00</td><td style="text-align: right;">$0.00</td></tr>
+        <tr><td>14 de Abr</td><td>Pago en efectivo</td><td style="text-align: right;">$0.00</td><td style="text-align: right;">$6,250.00</td></tr>
+        <tr><td>18 de Abr</td><td>Pedidos equipo Amazon</td><td style="text-align: right;">$0.00</td><td style="text-align: right;">$631.26</td></tr>
+        <tr><td>25 de Abr</td><td>Liquidación deuda Coppel</td><td style="text-align: right;">$50,860.00</td><td style="text-align: right;">$0.00</td></tr>
+        <tr><td>25 de Abr</td><td>Nuevo Préstamo Coppel (Efec.)</td><td style="text-align: right;">$0.00</td><td style="text-align: right;">$50,000.00</td></tr>
+        <tr><td>26 de Abr</td><td>Efectivo para Erika</td><td style="text-align: right;">$1,500.00</td><td style="text-align: right;">$0.00</td></tr>
+        <tr class="total-row"><td></td><td>SUBTOTALES</td><td style="text-align: right;">$95,960.00</td><td style="text-align: right;">$56,881.26</td></tr>
+        <tr class="total-row" style="background-color: #fffaf0;"><td colspan="2">DIFERENCIA (Saldo a favor de Alfonso en Aportaciones)</td><td colspan="2" style="text-align: right; color: #9c4221;">$39,078.74</td></tr>
+      </tbody>
+    </table>
+
+    <h3>3. DATOS DE CONSULTA Y RECOMPENSAS (NO RESTAN SALARIO)</h3>
+    <div class="reference-box">
+      <strong>Intereses Préstamo Bancoppel:</strong> Alfonso absorbe el 100% de los intereses generados. Se mantienen aquí como dato informativo de consulta, sin afectar el balance de Víctor.
+    </div>
+    <table>
+      <thead>
+        <tr><th>CONCEPTO</th><th>TIPO</th><th style="text-align: right;">MONTO</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Dinero electrónico Coppel (25 Abr)</td><td><span class="bonus-badge">RECOMPENSA ADICIONAL</span></td><td style="text-align: right;">$1,432.00</td></tr>
+        <tr><td>Intereses Préstamo Personal Bancoppel</td><td><span class="bonus-badge">ABSORBIDO POR ALFONSO</span></td><td style="text-align: right;">—</td></tr>
+      </tbody>
+    </table>
+
+    <h3>4. VEREDICTO FINAL</h3>
+    <table>
+      <thead>
+        <tr><th>CONCEPTO</th><th style="text-align: right;">MONTO</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Monto Pendiente de Pagar a Víctor (Salarios)</td><td style="text-align: right;">$35,000.00</td></tr>
+        <tr><td>Saldo a favor de Alfonso (Aportaciones Netas)</td><td style="text-align: right;">$39,078.74</td></tr>
+        <tr class="total-row"><td style="color: #c53030;">EXCEDENTE QUE VÍCTOR DEBE A ALFONSO</td><td style="text-align: right; color: #c53030;">$4,078.74</td></tr>
+      </tbody>
+    </table>
+
+    <div class="summary-box">
+      <span class="conclusion-title">CONCLUSIÓN FINAL</span>
+      Las aportaciones netas de Alfonso ($39,078.74) cubren la totalidad de los salarios pendientes de Víctor ($35,000.00).<br><br>
+      <span class="highlight">VÍCTOR LE DEBE A ALFONSO: $4,078.74</span>
+    </div>
+  </div>
+</body>
+</html>
