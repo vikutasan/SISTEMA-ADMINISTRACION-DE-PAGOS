@@ -238,3 +238,28 @@ td {
   .sidebar-header h2, .nav-item span { display: none; }
   .main-content { margin-left: 80px; }
 }
+
+/* AGREEMENTS MODULE */
+.agreements-doc h2 {
+  font-size: 1.5rem;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  padding-bottom: 0.75rem;
+}
+
+.doc-section {
+  margin-bottom: 3rem;
+}
+
+.agreement-box {
+  background: rgba(56, 189, 248, 0.1);
+  border: 1px solid var(--accent-blue);
+  padding: 1.5rem;
+  border-radius: 0.75rem;
+  margin-top: 1rem;
+}
+
+.agreement-item h3 {
+  font-size: 1.1rem;
+  margin-bottom: 0.5rem;
+  color: var(--text-main);
+}

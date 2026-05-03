@@ -27,15 +27,34 @@ app.get('/api/dashboard', (req, res) => {
       if (t.receiver_id === 2) victorBalance += t.amount;
     });
 
-    data.accounts = [
-      { id: 1, name: 'Alfonso', balance: alfonsoBalance },
-      { id: 2, name: 'Víctor', balance: victorBalance }
-    ];
-
     db.all('SELECT current_debt FROM credit_lines', [], (err, lines) => {
       if (err) return res.status(500).json({ error: err.message });
       data.totalDebt = lines.reduce((acc, curr) => acc + (curr.current_debt || 0), 0);
-      res.json(data);
+      
+      // Integrar semanalidades según regla de usuario
+      db.all('SELECT * FROM salaries', [], (err, sals) => {
+        if (err) return res.status(500).json({ error: err.message });
+        
+        sals.forEach(s => {
+          // Ignorar Semana 11 y anteriores por acuerdo de saldo "a mano"
+          if (s.week_number <= 11) return;
+
+          if (s.status === 'PENDIENTE') {
+            // Aportación de Víctor
+            victorBalance -= (s.amount || 5000);
+          } else if (s.status === 'PAGADO') {
+            // Aportación de Alfonso
+            alfonsoBalance -= (s.amount || 5000);
+          }
+        });
+
+        data.accounts = [
+          { id: 1, name: 'Alfonso', balance: alfonsoBalance },
+          { id: 2, name: 'Víctor', balance: victorBalance }
+        ];
+
+        res.json(data);
+      });
     });
   });
 });
@@ -113,14 +132,14 @@ app.get('/api/transactions', (req, res) => {
 
 // Registrar nueva transacción
 app.post('/api/transactions', (req, res) => {
-  const { amount, sender_id, receiver_id, concept, credit_line_id, is_salary } = req.body;
+  const { amount, sender_id, receiver_id, concept, credit_line_id, is_salary, interest_amount } = req.body;
   const date = new Date().toISOString();
 
   db.serialize(() => {
     db.run('BEGIN TRANSACTION');
 
-    const stmt = db.prepare('INSERT INTO transactions (date, amount, sender_id, receiver_id, concept, credit_line_id, is_salary) VALUES (?, ?, ?, ?, ?, ?, ?)');
-    stmt.run(date, amount, sender_id, receiver_id, concept, credit_line_id, is_salary ? 1 : 0);
+    const stmt = db.prepare('INSERT INTO transactions (date, amount, sender_id, receiver_id, concept, credit_line_id, is_salary, interest_amount) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
+    stmt.run(date, amount, sender_id, receiver_id, concept, credit_line_id, is_salary ? 1 : 0, interest_amount || 0);
     stmt.finalize();
 
     // Actualizar balance si es entre cuentas
@@ -223,6 +242,39 @@ app.put('/api/salaries/:id', (req, res) => {
   db.run('UPDATE salaries SET status = ? WHERE id = ?', [status, id], (err) => {
     if (err) return res.status(500).json({ error: err.message });
     res.json({ success: true });
+  });
+});
+
+// Sincronizar Ficha desde Excel
+app.put('/api/cards/:id/sync', (req, res) => {
+  const { id } = req.params;
+  const { metadata } = req.body;
+  
+  if (!metadata) return res.status(400).json({ error: 'Metadata is required' });
+
+  let updateFields = [];
+  let params = [];
+  
+  if (metadata.current_debt !== undefined && metadata.current_debt !== '') {
+    updateFields.push('current_debt = ?');
+    params.push(metadata.current_debt);
+  }
+  
+  if (metadata.payment_no_interest !== undefined && metadata.payment_no_interest !== '') {
+    updateFields.push('payment_no_interest = ?');
+    params.push(metadata.payment_no_interest);
+  }
+
+  if (updateFields.length === 0) {
+    return res.json({ message: 'No valid data to update' });
+  }
+
+  params.push(id);
+  const sql = `UPDATE credit_lines SET ${updateFields.join(', ')} WHERE id = ?`;
+
+  db.run(sql, params, function(err) {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ updated: this.changes });
   });
 });
 

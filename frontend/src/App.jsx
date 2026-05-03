@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   CreditCard, 
   AlertCircle, 
@@ -9,8 +9,12 @@ import {
   Settings, 
   LayoutDashboard, 
   Calendar,
-  DollarSign
+  DollarSign,
+  UploadCloud,
+  AlertTriangle,
+  ShieldAlert
 } from 'lucide-react';
+import { parseBankStatement } from './utils/BankParser';
 import './App.css';
 
 function App() {
@@ -19,14 +23,21 @@ function App() {
   const [cards, setCards] = useState([]);
   const [salaries, setSalaries] = useState([]);
   const [transactions, setTransactions] = useState([]);
+  const [combinedHistory, setCombinedHistory] = useState([]);
   const [suggestion, setSuggestion] = useState(null);
+  
+  // Sync Module State
+  const [syncFile, setSyncFile] = useState(null);
+  const [syncData, setSyncData] = useState(null);
+  const [syncSelectedCardId, setSyncSelectedCardId] = useState('');
+  const fileInputRef = useRef(null);
   
   // Modals
   const [isModalOpen, setIsModalOpen] = useState(false); // Operaciones
   const [isCardModalOpen, setIsCardModalOpen] = useState(false); // Fichas
   
   const [formData, setFormData] = useState({
-    amount: '', sender_id: '1', receiver_id: '2', concept: '', is_salary: false
+    amount: '', sender_id: '1', receiver_id: '2', concept: '', is_salary: false, interest_amount: '', credit_line_id: ''
   });
 
   const [editingCardId, setEditingCardId] = useState(null);
@@ -57,6 +68,13 @@ function App() {
       const transRes = await fetch('http://localhost:3001/api/transactions');
       const transData = await transRes.json();
       setTransactions(transData);
+
+      // Combinar para el historial
+      const history = [
+        ...transData.map(t => ({ ...t, _type: 'transaction' })),
+        ...salData.map(s => ({ ...s, _type: 'salary' }))
+      ].sort((a, b) => new Date(b.date) - new Date(a.date));
+      setCombinedHistory(history);
     } catch (e) {
       console.error("Error fetching data:", e);
     }
@@ -75,7 +93,7 @@ function App() {
         body: JSON.stringify(formData)
       });
       setIsModalOpen(false);
-      setFormData({ amount: '', sender_id: '1', receiver_id: '2', concept: '', is_salary: false });
+      setFormData({ amount: '', sender_id: '1', receiver_id: '2', concept: '', is_salary: false, interest_amount: '', credit_line_id: '' });
       fetchData();
     } catch (e) {
       console.error("Error submitting transaction", e);
@@ -176,6 +194,13 @@ function App() {
             <DollarSign size={20} />
             <span>Aportaciones A&V</span>
           </button>
+          <button 
+            className={`nav-item ${activeModule === 'sync' ? 'active' : ''}`}
+            onClick={() => setActiveModule('sync')}
+          >
+            <UploadCloud size={20} />
+            <span>Sincronizar Banco</span>
+          </button>
         </nav>
       </aside>
 
@@ -223,26 +248,64 @@ function App() {
               )}
             </div>
 
-            <h2 style={{ marginBottom: '1.5rem' }}>Tarjetas y Créditos</h2>
-            <div className="cards-grid">
-              {cards.map(card => (
-                <div key={card.id} className="card credit-card" style={{ cursor: 'pointer' }} onClick={() => openCardModal(card)}>
-                  <div className="card-header" style={{display: 'flex', justifyContent: 'space-between', marginBottom: '1rem'}}>
-                    <span style={{fontWeight: '700'}}>{card.name}</span>
-                    <Edit size={16} className="text-secondary" />
-                  </div>
-                  <div className="card-details">
-                    <div className="detail-row" style={{display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', marginBottom: '0.25rem'}}>
-                      <span className="text-secondary">Deuda</span>
-                      <span className={card.current_debt > 0 ? 'text-red' : ''}>${(card.current_debt || 0).toLocaleString()}</span>
+            <h2 style={{ marginBottom: '1.5rem' }}>Tarjetas y Créditos (Próximos Vencimientos)</h2>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              {[...cards].sort((a, b) => {
+                const today = new Date().getDate();
+                const getDaysUntil = (day) => {
+                  if (!day) return 999; // Si no tiene fecha, hasta abajo
+                  let diff = day - today;
+                  if (diff < 0) diff += 30; // Aproximación mensual
+                  return diff;
+                };
+                return getDaysUntil(a.payment_day) - getDaysUntil(b.payment_day);
+              }).map(card => {
+                const today = new Date().getDate();
+                let daysUntil = card.payment_day ? card.payment_day - today : null;
+                if (daysUntil !== null && daysUntil < 0) daysUntil += 30;
+                
+                let urgencyColor = 'var(--text-secondary)';
+                if (daysUntil !== null) {
+                  if (daysUntil <= 3) urgencyColor = 'var(--accent-red)';
+                  else if (daysUntil <= 7) urgencyColor = 'var(--accent-purple)';
+                  else if (daysUntil <= 15) urgencyColor = 'var(--accent-blue)';
+                  else urgencyColor = 'var(--accent-green)';
+                }
+
+                return (
+                  <div key={card.id} className="card" style={{ cursor: 'pointer', padding: '1rem 1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', transition: 'all 0.2s ease', borderLeft: `4px solid ${urgencyColor}` }} onClick={() => openCardModal(card)} onMouseOver={(e) => e.currentTarget.style.transform = 'translateX(5px)'} onMouseOut={(e) => e.currentTarget.style.transform = 'translateX(0)'}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flex: 1 }}>
+                      <div style={{ minWidth: '150px' }}>
+                        <span style={{ fontWeight: '700', fontSize: '1.1rem', display: 'block', marginBottom: '0.2rem' }}>{card.name}</span>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', background: 'rgba(255,255,255,0.05)', padding: '0.2rem 0.5rem', borderRadius: '4px' }}>{card.type}</span>
+                      </div>
+                      
+                      <div style={{ flex: 1, display: 'flex', gap: '2rem' }}>
+                        <div>
+                          <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'block' }}>Deuda Actual</span>
+                          <span style={{ fontWeight: 'bold', color: card.current_debt > 0 ? 'var(--accent-red)' : 'var(--text-primary)' }}>
+                            ${(card.current_debt || 0).toLocaleString()}
+                          </span>
+                        </div>
+                        <div>
+                          <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'block' }}>Día Límite</span>
+                          <span style={{ fontWeight: 'bold' }}>{card.payment_day || 'N/A'}</span>
+                        </div>
+                      </div>
                     </div>
-                    <div className="detail-row" style={{display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem'}}>
-                      <span className="text-secondary">Pago Límite</span>
-                      <span>Día {card.payment_day || 'N/A'}</span>
+                    
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
+                      <div style={{ textAlign: 'right' }}>
+                        <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'block' }}>Vence en</span>
+                        <span style={{ fontWeight: '900', color: urgencyColor }}>
+                          {daysUntil !== null ? (daysUntil === 0 ? 'HOY' : `${daysUntil} días`) : 'N/A'}
+                        </span>
+                      </div>
+                      <Edit size={18} className="text-secondary" style={{ opacity: 0.5 }} />
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         ) : activeModule === 'contributions' ? (
@@ -254,21 +317,6 @@ function App() {
               </button>
             </header>
 
-            <div className="dashboard-grid" style={{ marginBottom: '2rem' }}>
-              <div className="card">
-                <div className="stat-label">Balance Alfonso</div>
-                <div className={`stat-value ${dashboard.accounts.find(a => a.id === 1)?.balance < 0 ? 'text-red' : 'text-green'}`}>
-                  ${(dashboard.accounts.find(a => a.id === 1)?.balance || 0).toLocaleString()}
-                </div>
-              </div>
-              <div className="card">
-                <div className="stat-label">Balance Víctor</div>
-                <div className={`stat-value ${dashboard.accounts.find(a => a.id === 2)?.balance < 0 ? 'text-red' : 'text-green'}`}>
-                  ${(dashboard.accounts.find(a => a.id === 2)?.balance || 0).toLocaleString()}
-                </div>
-              </div>
-            </div>
-
             <div className="card">
               <h2 style={{ marginBottom: '1.5rem', fontSize: '1.25rem' }}>Historial de Movimientos</h2>
               <div className="table-container">
@@ -278,37 +326,108 @@ function App() {
                       <th>Fecha</th>
                       <th>Concepto</th>
                       <th style={{ textAlign: 'right' }}>Aportación Alfonso</th>
+                      <th style={{ textAlign: 'right', color: 'var(--accent-purple)' }}>Intereses Pagados</th>
                       <th style={{ textAlign: 'right' }}>Aportación Víctor</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {transactions.map(t => (
-                      <tr key={t.id}>
-                        <td className="text-secondary" style={{ fontSize: '0.8rem' }}>{new Date(t.date).toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' })}</td>
-                        <td style={{ fontWeight: '500' }}>{t.concept}</td>
-                        <td style={{ textAlign: 'right', fontWeight: 'bold' }}>
-                          {t.sender_id === 1 ? `$${t.amount.toLocaleString()}` : '-'}
-                        </td>
-                        <td style={{ textAlign: 'right', fontWeight: 'bold' }}>
-                          {t.sender_id === 2 ? `$${t.amount.toLocaleString()}` : '-'}
-                        </td>
-                      </tr>
-                    ))}
+                    {combinedHistory.map((item, index) => {
+                      if (item._type === 'transaction') {
+                        const t = item;
+                        return (
+                          <tr key={`trans-${t.id}-${index}`}>
+                            <td className="text-secondary" style={{ fontSize: '0.8rem' }}>{new Date(t.date).toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' })}</td>
+                            <td style={{ fontWeight: '500' }}>{t.concept}</td>
+                            <td style={{ textAlign: 'right', fontWeight: 'bold' }}>
+                              {t.sender_id === 1 ? `$${t.amount.toLocaleString()}` : '-'}
+                            </td>
+                            <td style={{ textAlign: 'right', color: 'var(--accent-purple)' }}>
+                              {t.interest_amount > 0 ? (
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                                  <span style={{ fontWeight: 'bold' }}>${t.interest_amount.toLocaleString()}</span>
+                                  {t.credit_line_id && cards.find(c => c.id === t.credit_line_id) && (
+                                    <span style={{ fontSize: '0.7rem', opacity: 0.8 }}>
+                                      ({((t.interest_amount / (cards.find(c => c.id === t.credit_line_id).current_debt || 1)) * 100).toFixed(1)}% tasa real)
+                                    </span>
+                                  )}
+                                </div>
+                              ) : '-'}
+                            </td>
+                            <td style={{ textAlign: 'right', fontWeight: 'bold' }}>
+                              {t.sender_id === 2 ? `$${t.amount.toLocaleString()}` : '-'}
+                            </td>
+                          </tr>
+                        );
+                      } else {
+                        const s = item;
+                        return (
+                          <tr key={`sal-${s.id}-${index}`} style={{ background: s.status === 'PENDIENTE' ? 'rgba(248, 113, 113, 0.05)' : 'rgba(74, 222, 128, 0.05)' }}>
+                            <td className="text-secondary" style={{ fontSize: '0.8rem' }}>{new Date(s.date).toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' })}</td>
+                            <td style={{ fontWeight: '500' }}>
+                              Sueldo Semana {s.week_number} <span style={{fontSize:'0.7rem', opacity:0.7}}>({s.status})</span>
+                            </td>
+                            <td style={{ textAlign: 'right', fontWeight: 'bold', color: s.status === 'PAGADO' ? 'var(--accent-green)' : 'inherit' }}>
+                              {s.status === 'PAGADO' ? `$${(s.amount || 5000).toLocaleString()}` : '-'}
+                            </td>
+                            <td style={{ textAlign: 'right' }}>-</td>
+                            <td style={{ textAlign: 'right', fontWeight: 'bold', color: s.status === 'PENDIENTE' ? 'var(--accent-red)' : 'inherit' }}>
+                              {s.status === 'PENDIENTE' ? `$${(s.amount || 5000).toLocaleString()}` : '-'}
+                            </td>
+                          </tr>
+                        );
+                      }
+                    })}
                   </tbody>
                   <tfoot>
                     <tr style={{ background: 'rgba(255,255,255,0.05)', fontWeight: '800' }}>
                       <td colSpan="2">TOTALES</td>
                       <td style={{ textAlign: 'right', color: 'var(--accent-blue)' }}>
-                        ${transactions.reduce((acc, t) => t.sender_id === 1 ? acc + t.amount : acc, 0).toLocaleString()}
+                        ${combinedHistory.reduce((acc, item) => {
+                          if (item._type === 'transaction' && item.sender_id === 1) return acc + item.amount;
+                          if (item._type === 'salary' && item.week_number <= 11) return acc;
+                          if (item._type === 'salary' && item.status === 'PAGADO') return acc + (item.amount || 5000);
+                          return acc;
+                        }, 0).toLocaleString()}
+                      </td>
+                      <td style={{ textAlign: 'right', color: 'var(--accent-purple)' }}>
+                        ${combinedHistory.reduce((acc, item) => item._type === 'transaction' ? acc + (item.interest_amount || 0) : acc, 0).toLocaleString()}
                       </td>
                       <td style={{ textAlign: 'right', color: 'var(--accent-green)' }}>
-                        ${transactions.reduce((acc, t) => t.sender_id === 2 ? acc + t.amount : acc, 0).toLocaleString()}
+                        ${combinedHistory.reduce((acc, item) => {
+                          if (item._type === 'transaction' && item.sender_id === 2) return acc + item.amount;
+                          if (item._type === 'salary' && item.week_number <= 11) return acc;
+                          if (item._type === 'salary' && item.status === 'PENDIENTE') return acc + (item.amount || 5000);
+                          return acc;
+                        }, 0).toLocaleString()}
                       </td>
                     </tr>
                     <tr style={{ background: 'var(--bg-dark)' }}>
-                      <td colSpan="2" style={{ textAlign: 'right' }}>Diferencia (Excedente):</td>
-                      <td colSpan="2" style={{ textAlign: 'center', fontSize: '1.2rem', color: 'var(--accent-purple)' }}>
-                        ${Math.abs(transactions.reduce((acc, t) => t.sender_id === 1 ? acc + t.amount : acc, 0) - transactions.reduce((acc, t) => t.sender_id === 2 ? acc + t.amount : acc, 0)).toLocaleString()}
+                      <td colSpan="5" style={{ textAlign: 'center', fontSize: '1.2rem', padding: '1rem', color: 'var(--text-primary)' }}>
+                        {(() => {
+                          const alfonsoTotal = combinedHistory.reduce((acc, item) => {
+                            if (item._type === 'transaction' && item.sender_id === 1) return acc + item.amount;
+                            if (item._type === 'salary' && item.week_number <= 11) return acc;
+                            if (item._type === 'salary' && item.status === 'PAGADO') return acc + (item.amount || 5000);
+                            return acc;
+                          }, 0);
+                          
+                          const victorTotal = combinedHistory.reduce((acc, item) => {
+                            if (item._type === 'transaction' && item.sender_id === 2) return acc + item.amount;
+                            if (item._type === 'salary' && item.week_number <= 11) return acc;
+                            if (item._type === 'salary' && item.status === 'PENDIENTE') return acc + (item.amount || 5000);
+                            return acc;
+                          }, 0);
+                          
+                          const diff = alfonsoTotal - victorTotal;
+                          
+                          if (diff > 0) {
+                            return <span style={{ color: 'var(--accent-red)' }}>RESULTADO: Víctor aún debe a Alfonso <strong style={{fontSize: '1.4rem'}}>${Math.abs(diff).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</strong></span>;
+                          } else if (diff < 0) {
+                            return <span style={{ color: 'var(--accent-green)' }}>RESULTADO: Alfonso aún debe a Víctor <strong style={{fontSize: '1.4rem'}}>${Math.abs(diff).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</strong></span>;
+                          } else {
+                            return <span style={{ color: 'var(--text-secondary)' }}>RESULTADO: Nadie le debe a nadie (Están a mano)</span>;
+                          }
+                        })()}
                       </td>
                     </tr>
                   </tfoot>
@@ -372,7 +491,7 @@ function App() {
               </section>
             </div>
           </div>
-        ) : (
+        ) : activeModule === 'salaries' ? (
           <div className="app-container animate-fade-in">
             <header>
               <h1>SEMANALIDADES DE VÍCTOR</h1>
@@ -428,7 +547,197 @@ function App() {
               </div>
             </div>
           </div>
-        )}
+        ) : activeModule === 'sync' ? (
+          <div className="app-container animate-fade-in">
+            <header>
+              <h1 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <UploadCloud size={28} color="var(--accent-blue)" /> 
+                SINCRONIZACIÓN BANCARIA INTELIGENTE
+              </h1>
+            </header>
+            
+            {!syncData ? (
+              <div 
+                className="card" 
+                style={{ 
+                  border: '2px dashed var(--accent-blue)', 
+                  padding: '4rem 2rem', 
+                  textAlign: 'center', 
+                  background: 'rgba(59, 130, 246, 0.05)',
+                  cursor: 'pointer',
+                  marginTop: '2rem'
+                }}
+                onClick={() => fileInputRef.current?.click()}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={async (e) => {
+                  e.preventDefault();
+                  if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                    const file = e.dataTransfer.files[0];
+                    setSyncFile(file);
+                    try {
+                      const result = await parseBankStatement(file);
+                      setSyncData(result);
+                      if (result.guessedBank) {
+                        const matchedCard = cards.find(c => c.name.toUpperCase().includes(result.guessedBank));
+                        if (matchedCard) setSyncSelectedCardId(matchedCard.id);
+                      }
+                    } catch(err) {
+                      alert("Error al leer archivo Excel: " + err.message);
+                    }
+                  }
+                }}
+              >
+                <input 
+                  type="file" 
+                  ref={fileInputRef} 
+                  style={{ display: 'none' }} 
+                  accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" 
+                  onChange={async (e) => {
+                    if (e.target.files.length > 0) {
+                      const file = e.target.files[0];
+                      setSyncFile(file);
+                      try {
+                        const result = await parseBankStatement(file);
+                        setSyncData(result);
+                        if (result.guessedBank) {
+                          const matchedCard = cards.find(c => c.name.toUpperCase().includes(result.guessedBank));
+                          if (matchedCard) setSyncSelectedCardId(matchedCard.id);
+                        }
+                      } catch(err) {
+                        alert("Error al leer archivo Excel: " + err.message);
+                      }
+                    }
+                  }}
+                />
+                <UploadCloud size={64} color="var(--accent-blue)" style={{ margin: '0 auto 1rem', opacity: 0.8 }} />
+                <h3 style={{ fontSize: '1.2rem', marginBottom: '0.5rem' }}>Arrastra tu Estado de Cuenta (Excel/CSV)</h3>
+                <p className="text-secondary">El análisis heurístico detectará saldos, fechas y anomalías localmente en tu navegador. Tus contraseñas y dinero están a salvo.</p>
+              </div>
+            ) : (
+              <div className="card animate-fade-in" style={{ marginTop: '2rem' }}>
+                <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', paddingBottom: '1rem', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+                  <div>
+                    <h2 style={{ fontSize: '1.25rem', marginBottom: '0.2rem' }}>Confirmación de Lectura</h2>
+                    <span className="text-secondary" style={{ fontSize: '0.85rem' }}>Archivo: {syncFile?.name}</span>
+                  </div>
+                  <button className="btn" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', color: 'white' }} onClick={() => { setSyncData(null); setSyncFile(null); }}>
+                    Cancelar y subir otro
+                  </button>
+                </header>
+
+                <div style={{ display: 'flex', gap: '2rem', marginBottom: '2rem' }}>
+                  <div style={{ flex: 1, background: 'rgba(0,0,0,0.2)', padding: '1.5rem', borderRadius: '8px', borderLeft: '4px solid var(--accent-blue)' }}>
+                    <h3 style={{ marginBottom: '1rem', fontSize: '1rem', color: 'var(--accent-blue)' }}>1. Vinculación de Tarjeta</h3>
+                    <div className="form-group">
+                      <label className="stat-label">Tarjeta / Banco Identificado</label>
+                      <select className="status-select" style={{ width: '100%' }} value={syncSelectedCardId} onChange={e => setSyncSelectedCardId(e.target.value)}>
+                        <option value="">-- Selecciona la Tarjeta --</option>
+                        {cards.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div style={{ flex: 1, background: 'rgba(0,0,0,0.2)', padding: '1.5rem', borderRadius: '8px', borderLeft: '4px solid var(--accent-green)' }}>
+                    <h3 style={{ marginBottom: '1rem', fontSize: '1rem', color: 'var(--accent-green)' }}>2. Datos Extraídos (Editables)</h3>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                      <div className="form-group">
+                        <label className="stat-label">Deuda Actual (Detectada)</label>
+                        <input 
+                          type="number" 
+                          className="status-select"
+                          style={{ width: '100%' }}
+                          value={syncData.metadata.current_debt} 
+                          onChange={(e) => setSyncData({...syncData, metadata: {...syncData.metadata, current_debt: e.target.value}})} 
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label className="stat-label">Pago para no generar int.</label>
+                        <input 
+                          type="number" 
+                          className="status-select"
+                          style={{ width: '100%' }}
+                          value={syncData.metadata.payment_no_interest} 
+                          onChange={(e) => setSyncData({...syncData, metadata: {...syncData.metadata, payment_no_interest: e.target.value}})} 
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <h3 style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <ShieldAlert size={20} color="var(--accent-red)" />
+                  Análisis de Transacciones ({syncData.transactions.length} detectadas)
+                </h3>
+                <div className="table-container" style={{ maxHeight: '400px', overflowY: 'auto', marginBottom: '2rem' }}>
+                  <table>
+                    <thead style={{ position: 'sticky', top: 0, background: 'var(--bg-dark)' }}>
+                      <tr>
+                        <th>Fecha</th>
+                        <th>Concepto</th>
+                        <th style={{ textAlign: 'right' }}>Monto</th>
+                        <th>Alerta de Seguridad</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {syncData.transactions.map((t, i) => (
+                        <tr key={i} style={{ background: t.isSuspicious ? 'rgba(248, 113, 113, 0.1)' : 'transparent' }}>
+                          <td className="text-secondary">{t.date}</td>
+                          <td>{t.concept}</td>
+                          <td style={{ textAlign: 'right', fontWeight: 'bold' }}>${t.amount.toLocaleString()}</td>
+                          <td>
+                            {t.isSuspicious ? (
+                              <span style={{ color: 'var(--accent-red)', display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.8rem' }}>
+                                <AlertTriangle size={14} /> {t.suspicionReason}
+                              </span>
+                            ) : <span className="text-secondary" style={{ fontSize: '0.8rem' }}>Normal</span>}
+                          </td>
+                        </tr>
+                      ))}
+                      {syncData.transactions.length === 0 && (
+                        <tr><td colSpan="4" style={{ textAlign: 'center' }} className="text-secondary">No se detectaron transacciones válidas. Revisa el formato del Excel.</td></tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                  <button 
+                    className="btn" 
+                    style={{ background: 'var(--accent-green)' }}
+                    disabled={!syncSelectedCardId}
+                    onClick={async () => {
+                      try {
+                        const res = await fetch(`http://localhost:3001/api/cards/${syncSelectedCardId}/sync`, {
+                          method: 'PUT',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ metadata: syncData.metadata })
+                        });
+                        if(res.ok) {
+                          alert('Tarjeta sincronizada exitosamente.');
+                          setSyncData(null);
+                          setSyncFile(null);
+                          // Recargar dashboard
+                          const cardsRes = await fetch('http://localhost:3001/api/cards');
+                          setCards(await cardsRes.json());
+                          const dashRes = await fetch('http://localhost:3001/api/dashboard');
+                          setDashboard(await dashRes.json());
+                          setActiveModule('payments'); // Regresar al dashboard principal
+                        } else {
+                          const error = await res.json();
+                          alert('Error: ' + error.error);
+                        }
+                      } catch(e) {
+                        alert('Error de conexión.');
+                      }
+                    }}
+                  >
+                    Guardar Datos y Sincronizar Ficha
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        ) : null}
 
         {/* MODAL TRANSACCIONES */}
         {isModalOpen && (
@@ -443,9 +752,24 @@ function App() {
                   <label className="stat-label" style={{display: 'block'}}>Concepto</label>
                   <input required type="text" className="status-select" style={{width: '100%', padding: '0.75rem'}} value={formData.concept} onChange={e => setFormData({...formData, concept: e.target.value})} />
                 </div>
+                <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem'}}>
+                  <div className="form-group">
+                    <label className="stat-label">Monto Principal Aportación ($)</label>
+                    <input required type="number" step="0.01" className="status-select" style={{width: '100%', padding: '0.75rem'}} value={formData.amount} onChange={e => setFormData({...formData, amount: e.target.value})} />
+                  </div>
+                  <div className="form-group">
+                    <label className="stat-label">Intereses Pagados (No suma al balance)</label>
+                    <input type="number" step="0.01" className="status-select" style={{width: '100%', padding: '0.75rem'}} value={formData.interest_amount} onChange={e => setFormData({...formData, interest_amount: e.target.value})} />
+                  </div>
+                </div>
                 <div className="form-group" style={{marginBottom: '1rem'}}>
-                  <label className="stat-label" style={{display: 'block'}}>Monto ($)</label>
-                  <input required type="number" step="0.01" className="status-select" style={{width: '100%', padding: '0.75rem'}} value={formData.amount} onChange={e => setFormData({...formData, amount: e.target.value})} />
+                  <label className="stat-label" style={{display: 'block'}}>Vincular a Ficha / Préstamo (Opcional)</label>
+                  <select className="status-select" style={{width: '100%', padding: '0.75rem'}} value={formData.credit_line_id} onChange={e => setFormData({...formData, credit_line_id: e.target.value})}>
+                    <option value="">-- Sin Vincular --</option>
+                    {cards.map(card => (
+                      <option key={card.id} value={card.id}>{card.name} (Deuda: ${card.current_debt})</option>
+                    ))}
+                  </select>
                 </div>
                 <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem'}}>
                   <div className="form-group">
