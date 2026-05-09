@@ -49,23 +49,23 @@ function App() {
 
   const fetchData = async () => {
     try {
-      const dbRes = await fetch('http://localhost:3001/api/dashboard');
+      const dbRes = await fetch(`http://${window.location.hostname}:3001/api/dashboard`);
       const dbData = await dbRes.json();
       setDashboard(dbData);
 
-      const cardsRes = await fetch('http://localhost:3001/api/cards');
+      const cardsRes = await fetch(`http://${window.location.hostname}:3001/api/cards`);
       const cardsData = await cardsRes.json();
       setCards(cardsData);
 
-      const sugRes = await fetch('http://localhost:3001/api/suggestions');
+      const sugRes = await fetch(`http://${window.location.hostname}:3001/api/suggestions`);
       const sugData = await sugRes.json();
       setSuggestion(sugData);
 
-      const salRes = await fetch('http://localhost:3001/api/salaries');
+      const salRes = await fetch(`http://${window.location.hostname}:3001/api/salaries`);
       const salData = await salRes.json();
       setSalaries(salData);
 
-      const transRes = await fetch('http://localhost:3001/api/transactions');
+      const transRes = await fetch(`http://${window.location.hostname}:3001/api/transactions`);
       const transData = await transRes.json();
       setTransactions(transData);
 
@@ -87,7 +87,7 @@ function App() {
   const handleTransactionSubmit = async (e) => {
     e.preventDefault();
     try {
-      await fetch('http://localhost:3001/api/transactions', {
+      await fetch(`http://${window.location.hostname}:3001/api/transactions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
@@ -105,7 +105,7 @@ function App() {
     try {
       const url = editingCardId 
         ? `http://localhost:3001/api/cards/${editingCardId}`
-        : 'http://localhost:3001/api/cards';
+        : `http://${window.location.hostname}:3001/api/cards`;
       const method = editingCardId ? 'PUT' : 'POST';
 
       await fetch(url, {
@@ -717,9 +717,9 @@ function App() {
                           setSyncData(null);
                           setSyncFile(null);
                           // Recargar dashboard
-                          const cardsRes = await fetch('http://localhost:3001/api/cards');
+                          const cardsRes = await fetch(`http://${window.location.hostname}:3001/api/cards`);
                           setCards(await cardsRes.json());
-                          const dashRes = await fetch('http://localhost:3001/api/dashboard');
+                          const dashRes = await fetch(`http://${window.location.hostname}:3001/api/dashboard`);
                           setDashboard(await dashRes.json());
                           setActiveModule('payments'); // Regresar al dashboard principal
                         } else {
