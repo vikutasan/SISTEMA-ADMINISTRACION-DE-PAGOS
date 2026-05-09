@@ -37,7 +37,7 @@ function App() {
   const [isCardModalOpen, setIsCardModalOpen] = useState(false); // Fichas
   
   const [formData, setFormData] = useState({
-    amount: '', sender_id: '1', receiver_id: '2', concept: '', is_salary: false, interest_amount: '', credit_line_id: ''
+    amount: '', sender_id: '1', receiver_id: '2', concept: '', is_salary: false, interest_amount: '', credit_line_id: '', date: ''
   });
 
   const [editingCardId, setEditingCardId] = useState(null);
@@ -93,7 +93,7 @@ function App() {
         body: JSON.stringify(formData)
       });
       setIsModalOpen(false);
-      setFormData({ amount: '', sender_id: '1', receiver_id: '2', concept: '', is_salary: false, interest_amount: '', credit_line_id: '' });
+      setFormData({ amount: '', sender_id: '1', receiver_id: '2', concept: '', is_salary: false, interest_amount: '', credit_line_id: '', date: '' });
       fetchData();
     } catch (e) {
       console.error("Error submitting transaction", e);
@@ -749,6 +749,8 @@ function App() {
               </div>
               <form onSubmit={handleTransactionSubmit}>
                 <div className="form-group" style={{marginBottom: '1rem'}}>
+                  <label className="stat-label" style={{display: 'block'}}>Fecha (Opcional, usa hoy por defecto)</label>
+                  <input type="date" className="status-select" style={{width: '100%', padding: '0.75rem', marginBottom: '1rem'}} value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} />
                   <label className="stat-label" style={{display: 'block'}}>Concepto</label>
                   <input required type="text" className="status-select" style={{width: '100%', padding: '0.75rem'}} value={formData.concept} onChange={e => setFormData({...formData, concept: e.target.value})} />
                 </div>
@@ -762,15 +764,7 @@ function App() {
                     <input type="number" step="0.01" className="status-select" style={{width: '100%', padding: '0.75rem'}} value={formData.interest_amount} onChange={e => setFormData({...formData, interest_amount: e.target.value})} />
                   </div>
                 </div>
-                <div className="form-group" style={{marginBottom: '1rem'}}>
-                  <label className="stat-label" style={{display: 'block'}}>Vincular a Ficha / Préstamo (Opcional)</label>
-                  <select className="status-select" style={{width: '100%', padding: '0.75rem'}} value={formData.credit_line_id} onChange={e => setFormData({...formData, credit_line_id: e.target.value})}>
-                    <option value="">-- Sin Vincular --</option>
-                    {cards.map(card => (
-                      <option key={card.id} value={card.id}>{card.name} (Deuda: ${card.current_debt})</option>
-                    ))}
-                  </select>
-                </div>
+
                 <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem'}}>
                   <div className="form-group">
                     <label className="stat-label">Emisor</label>

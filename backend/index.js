@@ -132,8 +132,16 @@ app.get('/api/transactions', (req, res) => {
 
 // Registrar nueva transacción
 app.post('/api/transactions', (req, res) => {
-  const { amount, sender_id, receiver_id, concept, credit_line_id, is_salary, interest_amount } = req.body;
-  const date = new Date().toISOString();
+  const { amount, sender_id, receiver_id, concept, credit_line_id, is_salary, interest_amount, date: customDate } = req.body;
+  
+  // Si el usuario envía una fecha manual, la respetamos. Si no, tomamos la fecha actual.
+  let date = new Date().toISOString();
+  if (customDate) {
+    const d = new Date(customDate);
+    // Para evitar desfase de huso horario al seleccionar YYYY-MM-DD
+    d.setMinutes(d.getMinutes() + d.getTimezoneOffset());
+    date = d.toISOString();
+  }
 
   db.serialize(() => {
     db.run('BEGIN TRANSACTION');
