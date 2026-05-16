@@ -164,6 +164,63 @@ app.post('/api/transactions', (req, res) => {
   });
 });
 
+// Actualizar transacción existente
+app.put('/api/transactions/:id', (req, res) => {
+  const { id } = req.params;
+  const { amount, sender_id, receiver_id, concept, credit_line_id, is_salary, interest_amount, date: customDate } = req.body;
+
+  let date = null;
+  if (customDate) {
+    const d = new Date(customDate);
+    d.setMinutes(d.getMinutes() + d.getTimezoneOffset());
+    date = d.toISOString();
+  }
+
+  db.serialize(() => {
+    db.run('BEGIN TRANSACTION');
+
+    // 1. Obtener transacción original
+    db.get('SELECT * FROM transactions WHERE id = ?', [id], (err, oldTx) => {
+      if (err) {
+        db.run('ROLLBACK');
+        return res.status(500).json({ error: err.message });
+      }
+      if (!oldTx) {
+        db.run('ROLLBACK');
+        return res.status(404).json({ error: 'Transacción no encontrada' });
+      }
+
+      // 2. Revertir impacto anterior en accounts
+      if (oldTx.sender_id && oldTx.receiver_id) {
+        db.run('UPDATE accounts SET balance = balance + ? WHERE id = ?', [oldTx.amount, oldTx.sender_id]);
+        db.run('UPDATE accounts SET balance = balance - ? WHERE id = ?', [oldTx.amount, oldTx.receiver_id]);
+      }
+
+      // 3. Actualizar la transacción
+      const newDate = date || oldTx.date;
+      const stmt = db.prepare(`
+        UPDATE transactions SET 
+          date = ?, amount = ?, sender_id = ?, receiver_id = ?, concept = ?, 
+          credit_line_id = ?, is_salary = ?, interest_amount = ?
+        WHERE id = ?
+      `);
+      stmt.run(newDate, amount, sender_id, receiver_id, concept, credit_line_id, is_salary ? 1 : 0, interest_amount || 0, id);
+      stmt.finalize();
+
+      // 4. Aplicar nuevo impacto en accounts
+      if (sender_id && receiver_id) {
+        db.run('UPDATE accounts SET balance = balance - ? WHERE id = ?', [amount, sender_id]);
+        db.run('UPDATE accounts SET balance = balance + ? WHERE id = ?', [amount, receiver_id]);
+      }
+
+      db.run('COMMIT', (err) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ success: true, message: 'Transacción actualizada' });
+      });
+    });
+  });
+});
+
 // Sugerencias de Tarjeta (Lógica Básica: tarjeta cuyo día de corte acaba de pasar)
 app.get('/api/suggestions', (req, res) => {
   const today = new Date().getDate();
