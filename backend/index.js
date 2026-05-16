@@ -71,18 +71,19 @@ app.get('/api/cards', (req, res) => {
 app.post('/api/cards', (req, res) => {
   const { 
     name, type, periodicity, credit_limit, cut_day, payment_day, 
-    current_debt, payment_no_interest, available_credit, liquidation_amount 
+    current_debt, payment_no_interest, available_credit, liquidation_amount, managed_by 
   } = req.body;
   const stmt = db.prepare(`
     INSERT INTO credit_lines 
-    (name, type, periodicity, credit_limit, cut_day, payment_day, current_debt, payment_no_interest, available_credit, liquidation_amount) 
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    (name, type, periodicity, credit_limit, cut_day, payment_day, current_debt, payment_no_interest, available_credit, liquidation_amount, managed_by) 
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
   
   stmt.run(
     [
       name, type, periodicity || 'MENSUAL', credit_limit || 0, cut_day || null, payment_day || null, 
-      current_debt || 0, payment_no_interest || 0, available_credit || 0, liquidation_amount || 0
+      current_debt || 0, payment_no_interest || 0, available_credit || 0, liquidation_amount || 0,
+      managed_by || 'alfonso'
     ], 
     function(err) {
       if (err) return res.status(500).json({ error: err.message });
@@ -97,14 +98,14 @@ app.put('/api/cards/:id', (req, res) => {
   const { id } = req.params;
   const { 
     name, type, periodicity, credit_limit, cut_day, payment_day, 
-    current_debt, payment_no_interest, available_credit, liquidation_amount 
+    current_debt, payment_no_interest, available_credit, liquidation_amount, managed_by 
   } = req.body;
 
   const stmt = db.prepare(`
     UPDATE credit_lines SET 
       name = ?, type = ?, periodicity = ?, credit_limit = ?, cut_day = ?, 
       payment_day = ?, current_debt = ?, payment_no_interest = ?, 
-      available_credit = ?, liquidation_amount = ?
+      available_credit = ?, liquidation_amount = ?, managed_by = ?
     WHERE id = ?
   `);
 
@@ -112,7 +113,7 @@ app.put('/api/cards/:id', (req, res) => {
     [
       name, type, periodicity || 'MENSUAL', credit_limit || 0, cut_day || null, payment_day || null, 
       current_debt || 0, payment_no_interest || 0, available_credit || 0, liquidation_amount || 0,
-      id
+      managed_by || 'alfonso', id
     ],
     function(err) {
       if (err) return res.status(500).json({ error: err.message });
@@ -224,26 +225,28 @@ app.put('/api/transactions/:id', (req, res) => {
 // Sugerencias de Tarjeta (Lógica Básica: tarjeta cuyo día de corte acaba de pasar)
 app.get('/api/suggestions', (req, res) => {
   const today = new Date().getDate();
-  // Buscamos tarjetas cuyo día de corte sea menor al día de hoy, y tomamos la que cortó más recientemente.
-  // Si hoy es menor a todos los días de corte, buscamos el del mes anterior (el mayor de todos).
-  db.all('SELECT * FROM credit_lines WHERE type = "TDC" AND cut_day IS NOT NULL', [], (err, rows) => {
+  const managedBy = req.query.managed_by || null;
+  let query = 'SELECT * FROM credit_lines WHERE type = "TDC" AND cut_day IS NOT NULL';
+  const params = [];
+  if (managedBy) {
+    query += ' AND managed_by = ?';
+    params.push(managedBy);
+  }
+  db.all(query, params, (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
     
-    if (rows.length === 0) return res.json(null);
+    if (rows.length === 0) return res.json({ suggestions: [] });
 
     rows.forEach(card => {
       let diff = today - card.cut_day;
       if (diff < 0) {
-        // Cortó el mes pasado
         diff = diff + 30;
       }
       card.daysSinceCut = diff;
     });
 
-    // Ordenar de menor a mayor días desde el corte (el menor es el que acaba de cortar = MEJOR SUGERENCIA)
     rows.sort((a, b) => a.daysSinceCut - b.daysSinceCut);
 
-    // Tomar las 3 mejores
     const bestCards = rows.slice(0, 3);
     res.json({ suggestions: bestCards });
   });
