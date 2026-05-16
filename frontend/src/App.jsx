@@ -279,7 +279,7 @@ function App() {
                   <div style={{ marginTop: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                     {suggestion.suggestions.map((card, i) => (
                       <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                         <span style={{color: i === 0 ? 'var(--accent-blue)' : 'var(--text-primary)', fontWeight: 'bold', fontSize: i === 0 ? '1.1rem' : '0.9rem'}}>{i + 1}. {card.name}</span>
+                         <span style={{color: i === 0 ? 'var(--accent-blue)' : 'var(--text-primary)', fontWeight: 'bold', fontSize: i === 0 ? '1.1rem' : '0.9rem'}}>{i + 1}. Usa {card.name}</span>
                          <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Corte hace {card.daysSinceCut} días</span>
                       </div>
                     ))}
