@@ -231,24 +231,21 @@ app.get('/api/suggestions', (req, res) => {
     
     if (rows.length === 0) return res.json(null);
 
-    let bestCard = null;
-    let minDiff = 31;
-
     rows.forEach(card => {
       let diff = today - card.cut_day;
       if (diff < 0) {
         // Cortó el mes pasado
         diff = diff + 30;
       }
-      
-      // Queremos la diferencia más cercana a 1 (acaba de cortar)
-      if (diff >= 0 && diff < minDiff) {
-        minDiff = diff;
-        bestCard = card;
-      }
+      card.daysSinceCut = diff;
     });
 
-    res.json({ bestCard, daysSinceCut: minDiff });
+    // Ordenar de menor a mayor días desde el corte (el menor es el que acaba de cortar = MEJOR SUGERENCIA)
+    rows.sort((a, b) => a.daysSinceCut - b.daysSinceCut);
+
+    // Tomar las 3 mejores
+    const bestCards = rows.slice(0, 3);
+    res.json({ suggestions: bestCards });
   });
 });
 
