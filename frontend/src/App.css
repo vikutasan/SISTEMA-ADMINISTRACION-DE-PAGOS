@@ -263,3 +263,80 @@ td {
   margin-bottom: 0.5rem;
   color: var(--text-main);
 }
+
+/* PRINT STYLES — Exportar PDF desde Aportaciones A&V */
+@media print {
+  .sidebar,
+  .btn,
+  .modal-overlay,
+  .nav-item {
+    display: none !important;
+  }
+
+  .main-content {
+    margin-left: 0 !important;
+    padding: 0 !important;
+  }
+
+  body,
+  .app-layout,
+  .main-content,
+  .app-container,
+  .card,
+  .table-container {
+    background: white !important;
+    color: black !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+
+  h1 {
+    font-size: 1.4rem !important;
+    color: black !important;
+    text-align: center !important;
+    margin-bottom: 1rem !important;
+  }
+
+  h2 {
+    color: #333 !important;
+    font-size: 1.1rem !important;
+  }
+
+  header {
+    justify-content: center !important;
+  }
+
+  table {
+    width: 100% !important;
+    font-size: 0.8rem !important;
+  }
+
+  th {
+    background: #f1f5f9 !important;
+    color: #334155 !important;
+    padding: 0.5rem !important;
+    border-bottom: 2px solid #333 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  td {
+    padding: 0.4rem 0.5rem !important;
+    border-bottom: 1px solid #ddd !important;
+    color: black !important;
+  }
+
+  tfoot td {
+    color: #333 !important;
+    font-weight: 800 !important;
+  }
+
+  tfoot tr:last-child td {
+    font-size: 1rem !important;
+  }
+
+  @page {
+    size: landscape;
+    margin: 1.5cm;
+  }
+}

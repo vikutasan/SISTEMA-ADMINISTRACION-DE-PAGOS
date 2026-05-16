@@ -12,7 +12,8 @@ import {
   DollarSign,
   UploadCloud,
   AlertTriangle,
-  ShieldAlert
+  ShieldAlert,
+  FileDown
 } from 'lucide-react';
 import { parseBankStatement } from './utils/BankParser';
 import './App.css';
@@ -312,9 +313,16 @@ function App() {
           <div className="app-container animate-fade-in">
             <header>
               <h1>APORTACIONES DE ALFONSO Y DE VICTOR</h1>
-              <button className="btn" onClick={() => setIsModalOpen(true)}>
-                <Plus size={20} /> Registrar Aportación
-              </button>
+              <div style={{ display: 'flex', gap: '1rem' }}>
+                <button className="btn" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', color: 'white' }} onClick={() => {
+                  window.print();
+                }}>
+                  <FileDown size={20} /> Exportar PDF
+                </button>
+                <button className="btn" onClick={() => setIsModalOpen(true)}>
+                  <Plus size={20} /> Registrar Aportación
+                </button>
+              </div>
             </header>
 
             <div className="card">
